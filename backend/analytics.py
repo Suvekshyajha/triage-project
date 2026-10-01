@@ -11,5 +11,5 @@ def summarise(tickets: list[TriagedTicket]) -> dict:
         "by_urgency": dict(Counter(t.urgency.value for t in tickets)),
         "by_category": dict(Counter(t.category.value for t in tickets)),
         "by_sentiment": dict(Counter(t.sentiment.value for t in tickets)),
-        # TODO: add anything else useful, e.g. count of Critical+Angry tickets.
+        "avg_reply_length": sum(len(t.message) for t in tickets) / len(tickets) if tickets else 0,
     }

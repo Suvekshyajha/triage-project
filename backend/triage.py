@@ -17,6 +17,9 @@ client = Groq(api_key=config.GROQ_API_KEY)
 # Built once. Tells the model what shape its JSON must have.
 SCHEMA_HINT = json.dumps(Triage.model_json_schema())
 
+# Read by an endpoint if you want the UI to show progress.
+progress = {"running": False, "current": 0, "total": 0, "ticket_id": None}
+
 
 def triage_message(message: str, retries: int = 3) -> Triage:
     """Triage a single message into a validated Triage object."""
@@ -99,31 +102,33 @@ def triage_batch(force: bool = False) -> list[TriagedTicket]:
             return [TriagedTicket(**ticket) for ticket in json.load(f)]
 
     tickets = load_tickets()
+    progress.update(running=True, current=0, total=len(tickets), ticket_id=None)
 
     print(f"Starting AI triage for {len(tickets)} tickets...")
 
     results: list[TriagedTicket] = []
 
-    for index, ticket in enumerate(tickets):
-        print(
-            f"Processing ticket {index + 1}/{len(tickets)} "
-            f"(ID: {ticket.id})..."
-        )
+    try:
+        for index, ticket in enumerate(tickets):
+            progress.update(current=index + 1, ticket_id=ticket.id)
+            print(f"Ticket #{ticket.id} is being processed ({index + 1}/{len(tickets)})...")
 
-        triage = triage_message(ticket.message)
+            triage = triage_message(ticket.message)
 
-        results.append(
-            TriagedTicket(
-                id=ticket.id,
-                message=ticket.message,
-                **triage.model_dump(),
+            results.append(
+                TriagedTicket(
+                    id=ticket.id,
+                    message=ticket.message,
+                    **triage.model_dump(),
+                )
             )
-        )
 
-        # Do not wait after the final request.
-        if index < len(tickets) - 1:
-            print("Waiting 2 seconds before the next Groq request...")
-            time.sleep(2)
+            # Do not wait after the final request.
+            if index < len(tickets) - 1:
+                time.sleep(2)
+    finally:
+        # Runs even if a ticket fails, so the UI never stays stuck on "running".
+        progress["running"] = False
 
     # Save completed results only after the entire batch succeeds.
     with open(config.CACHE_FILE, "w", encoding="utf-8") as f:

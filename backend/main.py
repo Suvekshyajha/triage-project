@@ -20,7 +20,9 @@ app.add_middleware(
 def health():
     return {"status": "ok"}
 
-
+@app.get("/api/progress")
+def get_progress():
+    return triage.progress
 @app.get("/api/tickets")
 def get_tickets(force: bool = False):
     """Return all triaged tickets plus batch-level summary.
