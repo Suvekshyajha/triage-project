@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Generated AI cache (triage once, commit if you want a fixed demo)
+backend/data/triaged_cache.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
