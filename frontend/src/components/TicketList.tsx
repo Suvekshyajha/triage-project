@@ -1,5 +1,6 @@
 import type { TriagedTicket } from '../types'
 import { UrgencyPill, SentimentLabel } from './Badges'
+import { urgencyAccent } from '../lib/colors'
 
 export type SortDir = 'off' | 'asc' | 'desc'
 
@@ -67,19 +68,21 @@ export default function TicketList({
                     onSelect(t.id)
                   }
                 }}
-                className={`cursor-pointer border-t border-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 ${
-                  isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                className={`cursor-pointer border-t border-l-4 border-slate-100 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 ${
+                  isSelected
+                    ? `bg-indigo-50 ${urgencyAccent[t.urgency]}`
+                    : 'border-l-transparent hover:bg-slate-50'
                 }`}
               >
-                <td className="px-4 py-3.5 align-top text-slate-500">{t.id}</td>
-                <td className="px-4 py-3.5 align-top">
+                <td className="px-4 py-4 align-top text-slate-500">{t.id}</td>
+                <td className="px-4 py-4 align-top">
                   <div className="line-clamp-2 min-w-[240px] leading-snug">{t.message}</div>
                 </td>
-                <td className="px-4 py-3.5 align-top">
+                <td className="px-4 py-4 align-top">
                   <UrgencyPill urgency={t.urgency} />
                 </td>
-                <td className="px-4 py-3.5 align-top text-slate-700">{t.category}</td>
-                <td className="px-4 py-3.5 align-top">
+                <td className="px-4 py-4 align-top text-slate-700">{t.category}</td>
+                <td className="px-4 py-4 align-top">
                   <SentimentLabel sentiment={t.sentiment} />
                 </td>
               </tr>

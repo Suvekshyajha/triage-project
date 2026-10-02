@@ -9,10 +9,21 @@ export const urgencyColor: Record<Urgency, string> = {
   Low: 'bg-slate-100 text-slate-700 border-slate-200',
 }
 
-// Sentiment = just a small coloured dot next to plain text.
+// Left-border accent used on a selected ticket row and its detail panel, so
+// the two stay visually linked. Matches urgencyColor's hues.
+export const urgencyAccent: Record<Urgency, string> = {
+  Critical: 'border-l-red-700',
+  High: 'border-l-orange-400',
+  Medium: 'border-l-yellow-400',
+  Low: 'border-l-slate-300',
+}
+
+// Sentiment = a small coloured dot next to plain text. Kept more muted than
+// urgencyColor above so sentiment and urgency don't both read as "alarms" in
+// the same row.
 export const sentimentDot: Record<Sentiment, string> = {
-  Angry: 'bg-red-600',
-  Frustrated: 'bg-orange-500',
-  Neutral: 'bg-slate-400',
+  Angry: 'bg-rose-400',
+  Frustrated: 'bg-amber-400',
+  Neutral: 'bg-slate-300',
   Happy: 'bg-emerald-500',
 }

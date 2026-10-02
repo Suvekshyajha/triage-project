@@ -5,6 +5,7 @@ import {
   LabelList,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
@@ -26,7 +27,7 @@ const SENTIMENT_COLORS: Record<string, string> = {
 
 const URGENCY_ORDER = ['Critical', 'High', 'Medium', 'Low']
 const SENTIMENT_ORDER = ['Angry', 'Frustrated', 'Neutral', 'Happy']
-const DEFAULT_COLOR = '#6366f1' // indigo, used for the category chart
+const DEFAULT_COLOR = '#0b1c9b' // indigo, used for the category chart
 
 function toData(record: Record<string, number>, order?: string[]) {
   const entries = Object.entries(record).map(([name, value]) => ({ name, value }))
@@ -48,10 +49,13 @@ function ChartCard({
   colors?: Record<string, string>
 }) {
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
-      <h3 className="mb-2 text-sm font-medium text-slate-700">{title}</h3>
+    // Lighter border, no shadow: these charts are reference info, secondary
+    // to the stat tiles above and the ticket table below.
+    <div className="rounded-xl border border-slate-100 bg-white p-4">
+      <h3 className="mb-2 text-sm font-medium text-slate-500">{title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 16 }}>
+          <CartesianGrid vertical={false} stroke="#f1f5f9" />
           <XAxis dataKey="name" fontSize={12} />
           <YAxis allowDecimals={false} fontSize={12} />
           <Tooltip cursor={{ fill: '#f1f5f9' }} />

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { TriagedTicket } from '../types'
 import { UrgencyPill, SentimentLabel } from './Badges'
+import { urgencyAccent } from '../lib/colors'
 
 export default function TicketDetail({ ticket }: { ticket: TriagedTicket | null }) {
   const [draft, setDraft] = useState(ticket?.suggested_reply ?? '')
@@ -26,7 +27,9 @@ export default function TicketDetail({ ticket }: { ticket: TriagedTicket | null 
   }
 
   return (
-    <aside className="flex flex-col gap-4 rounded-xl border bg-white p-5 shadow-sm">
+    <aside
+      className={`flex flex-col gap-4 rounded-xl border border-l-4 bg-white p-5 shadow-sm ${urgencyAccent[ticket.urgency]}`}
+    >
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Ticket #{ticket.id}</h2>
         <UrgencyPill urgency={ticket.urgency} />
@@ -67,7 +70,7 @@ export default function TicketDetail({ ticket }: { ticket: TriagedTicket | null 
         <button
           type="button"
           onClick={copyReply}
-          className="h-11 flex-1 rounded-lg bg-indigo-700 text-sm font-medium text-white hover:bg-indigo-800"
+          className="h-11 flex-1 rounded-lg bg-[#0b1c9b] text-sm font-medium text-white hover:bg-indigo-800"
         >
           {copied ? 'Copied ✓' : 'Copy reply'}
         </button>

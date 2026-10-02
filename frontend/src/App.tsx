@@ -134,13 +134,13 @@ export default function App() {
       <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0b1c9b] text-sm font-bold text-white shadow-sm">
               C
-            </div>
+          </div>
 
             <div>
-              <h1 className="text-base font-semibold leading-tight md:text-lg">
-                Caregene <span className="font-normal text-slate-400">·</span> Support Triage
+              <h1 className="text-lg font-bold leading-tight tracking-tight text-slate-900 md:text-xl">
+                Caregene <span className="font-normal text-slate-300">·</span> Support Triage
               </h1>
 
               <p className="hidden text-xs text-slate-500 sm:block md:text-sm">
@@ -175,7 +175,7 @@ export default function App() {
 
         {data && (
           <>
-            <StatsOverview summary={data.summary} />
+            <StatsOverview summary={data.summary} onFilterUrgency={setUrgency} />
 
             <Charts summary={data.summary} />
 
