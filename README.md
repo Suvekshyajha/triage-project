@@ -1,30 +1,19 @@
-# Caregene · AI Support-Ticket Triage Dashboard
+# Caregene - AI Support Ticket Triage
 
-A web app that triages a batch of 20 customer support messages with AI and presents
-them in a clean, filterable dashboard for a support agent.
+I built a small dashboard that takes 20 customer support messages, sends each one to an AI
+model, and gets back four things: how urgent it is, what category it belongs to, how the
+customer sounds, and a draft reply the agent can send.
 
-- **Frontend:** React + Vite + TypeScript + Tailwind CSS + Recharts
-- **Backend:** Python + FastAPI (Pydantic-validated, structured AI output)
-- **AI:** Groq — Llama 3.3 70B via **JSON mode**, validated against a Pydantic schema
+The interesting part of this project was not the dashboard. It was getting the AI to label
+things the way a real support lead would. That took seven versions of the prompt.
 
-> Take-home for **Caregene — Applied AI Engineer (Intern)**.
+- **Live app:** _TODO_ | **Repo:** _TODO_ | **Video walkthrough:** _TODO_
 
-- **Live app:** _TODO — paste your deployed URL_
-- **Repo:** _TODO — paste your public GitHub URL_
-- **Video walkthrough:** _TODO — paste your Loom/recording link_
+**[ INSERT IMAGE HERE - Dashboard: stat cards, charts and the ticket table ]**
 
----
+<br>
 
-## Features
-
-- Batch triage of support tickets → **urgency, category, sentiment, suggested reply**
-- Dashboard: table view, search + filtering, sortable by urgency, colour-coded
-  priority & sentiment, detail view
-- Batch-level analytics: counts/breakdowns by category, urgency and sentiment (charts)
-- **Structured, validated output** (enums enforced on both sides) so results are
-  consistent across all 20 tickets
-- Loading/progress + error states; triage runs in the background and results are
-  cached so demo loads are fast and stable
+**[ INSERT IMAGE HERE - Ticket detail panel with the AI suggested reply ]**
 
 ---
 
@@ -32,163 +21,264 @@ them in a clean, filterable dashboard for a support agent.
 
 ```
 caregene-triage/
-├── backend/                 # Python + FastAPI
-│   ├── main.py              # API routes + CORS (run with: python main.py)
-│   ├── config.py            # env/config
-│   ├── schemas.py           # Pydantic enums + models (the output contract)
-│   ├── prompts.py           # the triage prompt (single source of truth)
-│   ├── triage.py            # Groq JSON-mode call + batch + cache
-│   ├── analytics.py         # batch-level aggregations
-│   ├── requirements.txt
-│   ├── .env.example
+├── prompt-versions/              All 7 prompt versions + their output + my notes
+├── backend/                      Python + FastAPI
+│   ├── main.py                   API routes
+│   ├── prompts.py                The prompt (single source of truth)
+│   ├── schemas.py                Pydantic enums - the output contract
+│   ├── triage.py                 Groq call, batch loop, retries, cache
+│   ├── analytics.py              Counts for the charts
 │   └── data/
-│       └── support_tickets.json   # the 20 provided tickets
-└── frontend/                # React + Vite + TS + Tailwind
-    ├── index.html
-    ├── package.json         # frontend dependencies (npm's requirements.txt)
+│       ├── support_tickets.json  The 20 tickets
+│       └── triaged_cache.json    Cached results (delete to re-run)
+└── frontend/                     React + Vite + TypeScript + Tailwind
     └── src/
-        ├── main.tsx         # entry point (imports index.css → Tailwind)
-        ├── App.tsx          # loads data, state, filtering, sorting
-        ├── api.ts           # fetch wrapper
-        ├── types.ts         # TS mirror of the backend schema
-        ├── index.css        # Tailwind directives
-        ├── lib/colors.ts    # colour coding
-        └── components/      # StatsOverview, Charts, Filters, TicketList, TicketDetail
+        ├── App.tsx               State, filtering, sorting
+        ├── api.ts                Fetch wrapper
+        ├── types.ts              TS mirror of the backend schema
+        └── components/           Stats, Charts, Filters, TicketList, TicketDetail
 ```
 
 ---
 
 ## Setup
 
-### 1. Backend
+You need Python 3.10+, Node 18+, and a free Groq key from <https://console.groq.com>.
+
+**Backend**
 
 ```bash
 cd backend
 python -m venv .venv
-# Windows:
 .venv\Scripts\activate
-# macOS/Linux:
-# source .venv/bin/activate
-
 pip install -r requirements.txt
-
-# Windows:
 copy .env.example .env
-# macOS/Linux:
-# cp .env.example .env
-# then open .env and set GROQ_API_KEY (get one at https://console.groq.com)
-
 python main.py
 ```
 
-Backend runs at <http://localhost:8000>.
+On macOS or Linux, use `source .venv/bin/activate` and `cp .env.example .env`.
 
-**How triage works:** `POST /api/triage` starts the batch in the background →
-`GET /api/progress` reports `{running, current, total, ticket_id}` for the progress bar →
-`GET /api/tickets` returns the finished results (responds `409` until the batch is done).
-Results are cached to `data/triaged_cache.json`, so later loads are instant. Delete that
-file (or restart) to re-run the batch.
+Fill in `.env`:
 
-### 2. Frontend
+```ini
+GROQ_API_KEY=your_key_here
+AI_MODEL=openai/gpt-oss-120b
+ALLOWED_ORIGINS=frontend url
+```
+
+**Frontend**
 
 ```bash
 cd frontend
 npm install
-
-# Windows:
 copy .env.example .env
-# macOS/Linux:
-# cp .env.example .env
-# set VITE_API_URL=http://localhost:8000
-
 npm run dev
 ```
 
-Frontend runs at <http://localhost:5173>.
-
-> The frontend has no `requirements.txt` — its dependencies live in `package.json`, and
-> `npm install` reads it. That's npm's equivalent of `pip install -r requirements.txt`.
+Set `VITE_API_URL=backend url`.
 
 ---
 
 ## Tech stack and why
 
-- **FastAPI (Python)** — async and minimal, and Pydantic models let me enforce the exact
-  output schema (Urgency / Category / Sentiment enums). Enforcing the contract in code is
-  the biggest lever for consistent AI output.
-- **Groq — Llama 3.3 70B via JSON mode** — fast and free-tier-friendly for a batch of 20.
-  `response_format={"type": "json_object"}` plus a schema hint in the prompt forces valid
-  JSON, which I then validate with Pydantic (`model_validate_json`) and retry on failure —
-  instead of parsing free text I'd have to repair. The model is configurable via the
-  `AI_MODEL` env var.
-- **React + Vite + Tailwind + Recharts** — fast path to a polished, responsive dashboard
-  with charts and colour coding.
-- **Separate frontend/backend** — frontend deploys to Vercel/Netlify, backend to Render.
+| Choice | Why I picked it |
+| --- | --- |
+| **FastAPI** | One small API that calls a model and returns JSON. Nothing heavier was needed. |
+| **Pydantic enums** | This is the important one. The valid labels live in code, not in the prompt. If the model returns anything else, validation fails and the call retries. Schema compliance was 20/20 in all seven runs because of this. |
+| **Groq + JSON mode** | Fast and free for 20 tickets. JSON mode plus the Pydantic schema in the prompt means I get real JSON back instead of free text I would have to clean up. Model is set by `AI_MODEL`, so it can be swapped without touching code. Temperature 0.2. |
+| **React + Vite + TypeScript** | Vite starts instantly, and `types.ts` mirrors the backend schema, so a label change breaks the build instead of quietly breaking the UI. |
+| **Tailwind + Recharts** | Quickest route to a clean dashboard with charts. |
+
+The idea behind the whole thing: **keep the shape of the answer in code and the judgement in
+the prompt.** Pydantic guarantees the labels are valid. The prompt decides whether they are
+right. That split is why I could rewrite the prompt seven times without breaking the app once.
 
 ---
 
-## Prompts (and how I iterated)
+## How it runs
 
-The exact prompt lives in [`backend/prompts.py`](backend/prompts.py). Current version:
+1. You open the dashboard. It calls `GET /api/tickets` to see if results already exist.
+2. Nothing cached yet, so it calls `POST /api/triage`, which starts the batch in the background.
+3. The backend loops through the 20 tickets one at a time, with a 2 second pause between them
+   to stay inside the Groq free tier. Each reply is validated against the schema, and retried
+   up to 3 times if it comes back malformed or rate-limited.
+4. Meanwhile the frontend polls `GET /api/progress` and shows "Processing ticket 7 of 20".
+5. When the batch finishes, results are written to `data/triaged_cache.json` and the dashboard
+   loads them. Every reload after that is instant. Delete the cache file to run it again.
+
+---
+
+## The final prompt
+
+This is version 7, the one in [`backend/prompts.py`](backend/prompts.py). It covers urgency
+rules, sentiment rules with tie-breakers and tone examples, category rules, and seven numbered
+rules for the reply.
+
+<details>
+<summary><b>Click to expand the full prompt</b></summary>
 
 ```text
-You are an AI support-ticket triage assistant for Caregene, a health and caregiving app
-(medication reminders, health records, caregiver profiles, tele-consultations).
-
+You are a support-ticket triage assistant for a health and caregiving app where you handle medication reminders, tele-consultation, health records, account management and billing.
 For every customer message, assign exactly one value for each field:
 - urgency: Critical | High | Medium | Low
 - category: Billing | Technical | Account | Feedback | Other
 - sentiment: Angry | Frustrated | Neutral | Happy
 - suggested_reply: a short draft an agent could send
 
-Urgency rules (health & safety first):
-- Critical: anything risking health or data loss or security — missed medication,
-  fall/emergency alerts not firing, lost health records, unauthorised account access.
-- High: billing disputes (double charge, charged after cancelling), cannot log in.
-- Medium: how-to questions, performance issues, late notifications.
-- Low: feature requests and praise/thank-you messages.
+For urgency, use these rules:
+- Critical: the customer is in immediate danger or needs urgent medical attention, data breach, data loss for health records, a major service outage affecting many users, unauthorized access to an account, emergency alerts not received or not sent on time, a failure that has already caused or is likely to cause a missed dose of critical medication (for example insulin), or any situation that could result in serious harm or legal liability.
+- High: a billing problem (double charge, incorrect billing, charged after cancellation), a login failure, or any technical problem that is not Critical but affects the user's medication or health (for example a medication or health feature such as reminders, scanning, tracking or video consultation that is late, missing or not working, where no dose has been missed and there is no immediate risk to health).
+- Medium: performance issues, how-to questions, general questions about the app, and technical problems that do not affect medication or health.
+- Low: general feedback, feature requests, appreciation or thank-you messages, and questions about pricing, plans, discounts or switching plans.
+- If a message fits both Critical and High, choose Critical.
 
-Category & sentiment:
-- Use "Other" only when nothing else clearly fits.
-- Praise/thank-you is category Feedback, sentiment Happy.
+For sentiment, judge the overall tone of the customer's message. The example words below are hints, not requirements. A message can be Angry or Frustrated without any of them. Judge how upset the customer sounds, not how serious the issue is. A serious or health-related issue does not make a message Frustrated by default. Check for Angry signals first, then Frustrated, then Neutral.
 
-Guardrails:
-- Do NOT invent facts, refund amounts, dates, order IDs, or policies. If information is
-  missing, acknowledge it and say a human agent will follow up.
-- Ground the reply only in what the message actually says. 2-4 sentences, warm and professional.
-- Stay calibrated: do not overstate certainty or over-promise.
+- Angry: the customer blames or accuses the company, uses insults or threats, writes a word in ALL CAPS for emphasis (not an acronym such as PDF), says something is "unacceptable" or "fraud", or makes a forceful demand for action. A command with words like "immediately", "now", "right away" or "today" is a forceful demand. A polite request ("please help") is not.
+- Frustrated: the customer reports a problem and sounds disappointed, annoyed, worried or stressed, but does not blame or demand forcefully. This includes problems that repeat or keep happening ("still", "again", "every time", "twice"), something that stopped working or used to work, and urgent but polite requests ("please help urgently").
+- Neutral: no complaint. Plain questions, how-to requests, information, or suggestions for improvement. A message that reports a problem is never Neutral, even if it ends with a question such as "Can this be fixed?".
+- Happy: praise, thanks or appreciation with no problem reported.
+
+Tie-breakers:
+- Angry beats Frustrated: if ANY Angry signal is present (ALL CAPS emphasis, "unacceptable", an accusation, an insult, a threat, a forceful command), choose Angry even if the customer also sounds worried, scared or stressed.
+- Choose Frustrated only when there is no Angry signal.
+- Neutral vs Frustrated: if a problem is reported and any disappointment, repetition or loss of something that worked before is visible, choose Frustrated. Choose Neutral only if there is no complaint at all.
+- Mixed messages (praise plus a problem): label the tone of the problem part.
+
+Examples (tone only):
+- "Nobody from your team has called me back in three days. This is a disgrace." -> Angry
+- "WHY is my appointment list empty? Fix it now." -> Angry
+- "I am so worried. The visit summary is wrong and you did nothing about it." -> Angry
+- "The step counter froze again after I changed phones, so annoying." -> Frustrated
+- "Nothing happens when I tap the chat button. Is this a known problem?" -> Frustrated
+- "I am worried, the refill reminder never appeared and my tablets run out on Friday. Please help." -> Frustrated
+- "Is it possible to print the visit summary in a larger font?" -> Neutral
+- "Thanks, the new colours are lovely!" -> Happy
+
+For category, analyze the content of the message and assign one of the following values:
+- Billing: refunds, charges, subscription, pricing, discounts, double charges, cancellation fees, plans, anything about money or payment.
+- Technical: app crashing, bugs, slow performance, technical glitches, missing app data, notifications and reminders not working, downloading reports, how to use a feature, settings help.
+- Account: login, password reset, account creation, account deletion, account recovery, account security, profile update, personal information update, caregiver or family access, unauthorized access.
+- Feedback: praise, thank-you messages, feature requests, suggestions for improvement.
+- Other: only if the message does not fit any category above (spam, unrelated or unclear messages).
+Login and password problems are always Account, never Technical.
+If a message mixes praise with a problem, categorize by the problem.
+If unsure between two categories, choose the one that must be fixed first.
+
+For suggested_reply, write a short draft of 2-5 sentences in easy-to-understand language, with a polite and empathetic tone and clear next steps. Follow these rules:
+
+1. Structure: for a problem, start with a short empathy line, then say what the team will do. Technical problem: ask for device details. Account problem: ask for account details. Billing problem: ask for billing details. Thank-you or feedback message: thank the customer for their feedback and appreciation. Do not invent contact details; mention contact information only if it is provided. If a tele-consultation was interrupted, also say the team will look into it and help arrange another consultation if possible.
+
+2. Never invent product facts. Do not state or name any menu path, screen, page, button, price, discount, plan, supported language or feature, and do not imply that a feature, language or option exists. For how-to, pricing, plan, language or export questions, say only that a team member will confirm whether it is available and share the details, unless the facts are provided to you. Do not use any wording that assumes the option exists (for example "we can help you switch", "our family plan", "the steps to export", "the options for switching", "the exact steps for exporting", "we'll provide detailed instructions"). For simple how-to, pricing, plan, language or export questions, do NOT ask the customer for email, device, app version, a screenshot or any other detail.
+
+3. Never claim an action is already done and never guarantee an outcome. The ONLY commitments you may make are that the team will "investigate", "review" or "look into" the issue and will get back to the customer. Do not add anything after that which promises or implies a result - no "ensure", "make sure", "fully", "resolve", "fix", "restore", "refund", "stop", "cancel", "work on" or "work to", and nothing of the form "work to / work on + [result]". For unauthorized access or other security issues, never write "lock"; write: "our security team will review and take steps to secure the account once your identity is confirmed."
+
+4. Ask only for what the system may need, and never for confidential information. Ask ONLY for items on this list, and do not ask for anything else: account email or username, device type, operating system, app version, a screenshot, date and time of the problem, date of the charge or purchase. Do not ask for amounts, "recent changes", how many patients, phone numbers, passwords, OTPs or full card numbers. For security or credential issues, ask the customer to confirm the email address on the account so the team can verify their identity.
+
+5. Safety lines - include the matching line(s) below, and only those; do not give medical advice or a diagnosis, and do not add any other interim health or usage advice:
+   - Emergency alert missed, or someone in danger or hurt: tell the customer to contact local emergency services if anyone needs urgent help.
+   - Health data missing: ask the customer not to log out of the app or delete the app or account until the team has looked into it.
+   - Medication reminder missed, late, failing or not working, or a dose missed: suggest a backup reminder method and contacting their doctor or healthcare provider about any missed dose.
+   Do not add the emergency-services or doctor line to tickets that do not match one of these cases.
+
+6. Do not mention internal labels (urgency, category or sentiment), do not repeat or restate the customer's message back (express empathy in general terms instead), and do not blame the customer.
+
+7. Write as the support team, using "we" and "our team" (not "I"). Apologize for angry or frustrated messages, and choose the opening to fit the situation rather than always "We're sorry" - for a billing or account problem "Thank you for letting us know", for a technical problem "Sorry for the trouble", for a health or safety problem "We understand how worrying this is". For feedback or thank-you messages, thank the customer for their feedback and appreciation.
 ```
 
-**How I iterated** _(replace with your real notes — graders look for this):_
+</details>
 
-- **v1** — a plain "classify this ticket" instruction. Problem: inconsistent labels
-  (e.g. "urgent" vs "Critical") and long, chatty replies.
-- **v2** — added the explicit enum lists + the urgency rules, and switched to **JSON mode**
-  with a schema hint in the prompt, validated with Pydantic (retry on invalid output).
-  Fixed label consistency.
-- **v3** — added the "do not invent facts / stay calibrated" guardrails and the reply
-  length limit, after seeing it invent refund amounts and promise specific timelines.
+**All seven prompt versions are in the `prompt-versions/` folder in the repo root.** Each one
+has the full prompt text, the exact 20-ticket output it produced, and the notes I wrote while
+scoring it.
 
 ---
 
-## Deployment
+## How the prompt evolved
 
-- **Backend (Render):** new Web Service →
-  build `pip install -r requirements.txt`,
-  start `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-  Set env vars `GROQ_API_KEY`, `ALLOWED_ORIGINS` (your deployed frontend URL), and
-  optionally `AI_MODEL` (e.g. `llama-3.3-70b-versatile`).
-- **Frontend (Vercel/Netlify):** build `npm run build`, output dir `dist`.
-  Set `VITE_API_URL` to your Render backend URL.
+After every version I ran the same 20 tickets, compared all 60 labels (20 tickets x 3 fields)
+against a reference set I wrote by hand, then read all 20 replies and counted which rule each
+one broke. Whatever got worse became the edit list for the next version.
+
+
+**v1 had no rules.** It got the dangerous tickets right by instinct, but the replies made
+things up: a menu path called "Caregivers > Add Caregiver", a yearly discount, Nepali language
+support, a family plan. One reply said "I've locked your account" when the reply does nothing
+at all. And a slow dashboard was ranked higher than medication reminders arriving late, which
+is backwards for a health app.
+
+**v2 fixed urgency** by writing the four levels out. Late reminders still sat at Medium though,
+because no rule mentioned reminder reliability.
+
+**v3 is where I learned the most useful lesson.** I wrote the sentiment rules as lists of
+trigger words - "unacceptable", "fraud", "frustrated", "fed up". Sentiment prediction accuracy immediately dropped
+. The model started matching words instead of reading tone, so "Fix this immediately"
+after a missed insulin dose came back as Frustrated, because none of my words appeared. Listing
+example words tells the model to look for words.
+
+**v4 fixed that with one sentence:** "the words below are hints, not requirements - judge how
+upset the customer sounds, not how serious the issue is". Sentiment recovered, and the first
+batch of reply rules killed all five made-up replies at once. Biggest single jump in reply
+quality in the project.
+
+**v5 finally rewrote the High rule properly**, naming the health features out loud, and triage
+hit 9.7. But reply quality went *down*, which surprised me. Three safety lines just disappeared,
+and my ban on "we will restore" became "work to restore" in six replies.
+
+**v6 taught me that precedence beats description.** One line - "if ANY Angry signal is present,
+choose Angry even if the customer also sounds worried" - fixed the last sentiment miss on the
+first try, after two versions of longer, richer definitions had failed. Sentiment prediction became very precise
+
+**v7 I deliberately left sentiment and category untouched**, because both were already perfect
+and editing them could only lose points. Every edit targeted one named ticket that had failed in
+v6. 
 
 ---
 
-## What I'd improve with more time
+## One challenge I hit
 
-_TODO — e.g. per-ticket confidence scores, auth, upload a custom batch, export to CSV,
-unit tests on the triage parsing._
+**Banning words didn't stop the behaviour. It just moved it.**
 
-## One thing that didn't work / a challenge
+The rule is simple: the AI can say the team will look into something, but it must never promise
+the problem will be fixed. I tried to enforce it with a list of forbidden words, and spent three
+versions watching the model walk around my list.
 
-_TODO — describe one real challenge, e.g. keeping replies grounded without hard-coding, or
-getting consistent urgency on ambiguous tickets._
+| I banned | It wrote instead |
+| --- | --- |
+| "I've refunded", "I've fixed" | "work on processing a refund" |
+| "we will restore", "ensure" | "work to restore" (six replies) |
+| "work on" and "work to" + a result | "ensure the subscription is fully cancelled" |
+
+Same story with features. I banned the phrase "our family plan", so it wrote "the options for
+covering multiple patients under one account". I banned "the steps to export", so it wrote "the
+steps to download". Every phrase I blocked came back as a paraphrase meaning exactly the same
+thing.
+
+What finally worked was flipping it around. In v7 I stopped listing what was forbidden and
+listed what was allowed: *the only commitments you may make are that the team will investigate,
+review or look into the issue and will get back to you.* That dropped the problem from nine
+replies to two.
+
+The real takeaway is that there is a difference between asking a model to **judge** something
+and asking it to **obey exact wording**. The judgement rules worked beautifully - urgency,
+category and sentiment all reached 20/20 on prompt text alone. The wording rules hit a ceiling:
+even in v7, 15 of 20 replies still write "I" instead of "we", even though rule 7 says it
+plainly. Wording belongs in code - generate the reply, scan it for banned patterns, retry once
+with a specific correction. That's the first thing I'd add next.
+
+---
+
+## Limitations
+
+I want to be straight about what 60/60 does and doesn't prove.
+
+- **It's one run per version**, at temperature 0.2 rather than 0. A single label flipping
+  between versions could be randomness, not my edit.
+- **The reference labels are mine.** There was no supplied answer key, so a second reviewer
+  might disagree on two or three borderline Angry vs Frustrated calls.
+- **The 20 tickets are used up.** Every rule from v4 onward was written while staring at these
+  exact tickets. 60/60 means "fits these 20", not "will generalise". The honest next step is a
+  holdout set of fresh tickets, scored once.
+- **Replies are still the weaker half.** 8.6 vs 9.9. They're safe - nothing invented, nothing
+  promised, right safety lines - but the tone rules aren't followed closely, and that needs a
+  code-side check rather than more prompt text.

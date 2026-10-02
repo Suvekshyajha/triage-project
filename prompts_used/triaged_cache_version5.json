@@ -1,0 +1,162 @@
+[
+  {
+    "urgency": "Critical",
+    "category": "Technical",
+    "sentiment": "Angry",
+    "suggested_reply": "We’re sorry to hear about the crash and the missed insulin dose. Our team will investigate the issue right away and work to restore the medication reminders. Could you please provide the email address linked to the account, the device type, and the app version you are using? In the meantime, we recommend setting a temporary backup reminder (e.g., phone alarm) to avoid any further missed doses.",
+    "id": 1,
+    "message": "The app crashed during the update and now all of my mother's medication reminders are gone. She missed her evening insulin dose because of this. Fix this immediately."
+  },
+  {
+    "urgency": "High",
+    "category": "Billing",
+    "sentiment": "Angry",
+    "suggested_reply": "We’re sorry to hear about the duplicate charge on your Premium subscription. To investigate, could you please provide the email address associated with your account and the date of the charge? Our billing team will review the issue and work on issuing a refund as soon as possible. Thank you for your patience.",
+    "id": 2,
+    "message": "I have been charged twice for my Premium subscription this month. I want the duplicate charge refunded right away."
+  },
+  {
+    "urgency": "Medium",
+    "category": "Account",
+    "sentiment": "Neutral",
+    "suggested_reply": "Thank you for reaching out. To add another caregiver, we’ll need to verify your account – could you please provide the email address associated with your father’s profile? Once we confirm, we’ll guide you through the steps to add your sister and ensure she receives the alerts.",
+    "id": 3,
+    "message": "How do I add a second caregiver to my father's profile? I want my sister to also get his alerts."
+  },
+  {
+    "urgency": "Low",
+    "category": "Feedback",
+    "sentiment": "Happy",
+    "suggested_reply": "Thank you for your kind words! We're delighted to hear the medication tracking feature is helping you care for your grandmother. If you have any suggestions or need assistance, feel free to let us know.",
+    "id": 4,
+    "message": "Just wanted to say the new medication tracking feature is fantastic. It has made caring for my grandmother so much easier. Thank you!"
+  },
+  {
+    "urgency": "Critical",
+    "category": "Technical",
+    "sentiment": "Frustrated",
+    "suggested_reply": "We’re sorry you didn’t receive the emergency fall alert for your dad. Our team will investigate why the notification wasn’t delivered. Could you please provide the device type, app version, and the phone number linked to the alerts? In the meantime, consider using an alternative method to receive emergency notifications.",
+    "id": 5,
+    "message": "Emergency fall alerts are NOT reaching my phone. My dad fell yesterday and I received no notification at all. This is unacceptable for a health app."
+  },
+  {
+    "urgency": "High",
+    "category": "Account",
+    "sentiment": "Frustrated",
+    "suggested_reply": "We’re sorry you’re having trouble logging in. To investigate, could you please confirm the email address associated with your account and let us know the device and app version you’re using? Once we have that information, we’ll review the issue and work on restoring your access as quickly as possible.",
+    "id": 6,
+    "message": "I cannot log in. It keeps saying \"invalid credentials\" even after I reset my password twice. Please help."
+  },
+  {
+    "urgency": "Low",
+    "category": "Billing",
+    "sentiment": "Neutral",
+    "suggested_reply": "Thank you for reaching out! We can certainly help you switch from a monthly to an annual plan and let you know about any available discounts. Could you please provide the email address associated with your account so we can review your subscription options? Once we have that information, we’ll get back to you with the details.",
+    "id": 7,
+    "message": "Can I switch from monthly to annual billing? Is there a discount if I pay yearly?"
+  },
+  {
+    "urgency": "Medium",
+    "category": "Technical",
+    "sentiment": "Neutral",
+    "suggested_reply": "We understand you’d like to use Nepali in the app for your mother. A team member will verify if Nepali is supported and share the steps to change the language. Could you let us know which device and app version you are using? Thank you for reaching out.",
+    "id": 8,
+    "message": "How do I change the app language to Nepali? My mother is not comfortable reading English."
+  },
+  {
+    "urgency": "High",
+    "category": "Technical",
+    "sentiment": "Frustrated",
+    "suggested_reply": "We’re sorry the pill scanner isn’t recognizing medications after the update. Could you let us know the device model and app version you’re using, and if possible share a screenshot of the issue? Our team will investigate the problem and work on a solution as quickly as possible.",
+    "id": 9,
+    "message": "The pill scanner stopped recognising my father's medications after the latest update. It worked fine last week."
+  },
+  {
+    "urgency": "Low",
+    "category": "Feedback",
+    "sentiment": "Neutral",
+    "suggested_reply": "Thank you for sharing your idea! We appreciate your suggestion to sync with Apple Watch for wrist reminders. I’ll forward this feedback to our product team for consideration. If you have any other thoughts or need assistance, feel free to let us know.",
+    "id": 10,
+    "message": "It would be great if the app could sync with my Apple Watch so I get reminders on my wrist."
+  },
+  {
+    "urgency": "Critical",
+    "category": "Account",
+    "sentiment": "Angry",
+    "suggested_reply": "We’re very sorry to hear that your mother’s health records were altered without permission. Our security team will review this incident and lock the account as soon as we verify your identity. Could you please confirm the email address associated with the account and any recent activity you noticed? Once we have that information we’ll proceed with securing the account and investigating the changes.",
+    "id": 11,
+    "message": "Someone has accessed my account and changed my mother's health records without permission. I need this account locked down immediately."
+  },
+  {
+    "urgency": "Low",
+    "category": "Feedback",
+    "sentiment": "Happy",
+    "suggested_reply": "Thank you for your kind words! We're delighted to hear you had a great experience with our support agent. We’ll share your feedback with the team.",
+    "id": 12,
+    "message": "The support agent who helped me last week was excellent and very patient. Really appreciate the great service."
+  },
+  {
+    "urgency": "Medium",
+    "category": "Technical",
+    "sentiment": "Frustrated",
+    "suggested_reply": "We’re sorry you’re experiencing slow loading times on the dashboard. Could you let us know the device type and app version you’re using, and if possible share a screenshot of the loading screen? Our team will investigate the performance issue and get back to you with an update.",
+    "id": 13,
+    "message": "The dashboard is very slow to load. It takes almost 30 seconds every single time I open the app."
+  },
+  {
+    "urgency": "High",
+    "category": "Billing",
+    "sentiment": "Angry",
+    "suggested_reply": "We’re sorry to hear you’re still being charged after canceling your subscription. Please provide the email address associated with your account and the date you cancelled so we can investigate the issue. Our billing team will review the charges and work to stop any further billing and address a possible refund. We’ll keep you updated as soon as we have more information.",
+    "id": 14,
+    "message": "I cancelled my subscription last month but you are STILL charging my card. This feels like fraud and I want it stopped now."
+  },
+  {
+    "urgency": "Medium",
+    "category": "Technical",
+    "sentiment": "Neutral",
+    "suggested_reply": "We’re happy to help you download the health report. Please provide the account email associated with your father’s profile so we can locate the report. Once we have that, we’ll send you the steps to export it as a PDF for sharing with his doctor.",
+    "id": 15,
+    "message": "Where can I download my father's health report as a PDF to share with his doctor?"
+  },
+  {
+    "urgency": "High",
+    "category": "Technical",
+    "sentiment": "Frustrated",
+    "suggested_reply": "We’re sorry you’re experiencing delayed reminder notifications. Could you let us know the device type and app version you’re using, and if possible share a screenshot of the timing settings? Our team will investigate the cause and work on correcting the notification schedule for you.",
+    "id": 16,
+    "message": "The reminder notifications arrive about 10 minutes late every time. Can this timing be fixed?"
+  },
+  {
+    "urgency": "High",
+    "category": "Technical",
+    "sentiment": "Frustrated",
+    "suggested_reply": "We’re sorry the video call kept dropping and you couldn’t finish your consultation. Our team will investigate the issue. Could you please share the date and time of the call, the device and app version you used, and any screenshots or error messages you saw? We’ll review the details and work to get your next appointment set up as soon as possible.",
+    "id": 17,
+    "message": "The video call with the doctor kept dropping and we could not finish the consultation. Very frustrating."
+  },
+  {
+    "urgency": "Low",
+    "category": "Feedback",
+    "sentiment": "Happy",
+    "suggested_reply": "Thank you for sharing your positive experience! We're delighted to hear the new interface is easier for your grandmother to use. If you have any suggestions or need assistance in the future, feel free to let us know.",
+    "id": 18,
+    "message": "I love the new interface redesign. It is much easier for my grandmother to navigate on her own now."
+  },
+  {
+    "urgency": "Low",
+    "category": "Billing",
+    "sentiment": "Neutral",
+    "suggested_reply": "Thank you for your question! We’ll review our family plan options and let you know if we can support multiple patients under one account. Could you please provide the email address associated with your account so we can share the relevant details?",
+    "id": 19,
+    "message": "Do you offer a family plan that covers multiple patients under one account?"
+  },
+  {
+    "urgency": "Critical",
+    "category": "Technical",
+    "sentiment": "Frustrated",
+    "suggested_reply": "We’re sorry to hear that your mother’s health data is missing. To investigate, could you please provide the account email associated with the app and the date when the data was last visible? If you know the device type and app version, that would also help. Our team will review the issue promptly and work to restore the records before her appointment.",
+    "id": 20,
+    "message": "All of my mother's health data has disappeared from the app. Months of blood pressure and glucose logs, gone. Please help urgently, we need that history for her appointment tomorrow."
+  }
+]
