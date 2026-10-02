@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchTickets } from './api'
+import { fetchTickets, startTriage, fetchProgress } from './api'
 import type { TicketsResponse, TriagedTicket } from './types'
 import StatsOverview from './components/StatsOverview'
 import Charts from './components/Charts'
@@ -8,12 +8,18 @@ import TicketList from './components/TicketList'
 import type { SortDir } from './components/TicketList'
 import TicketDetail from './components/TicketDetail'
 
-const URGENCY_RANK: Record<string, number> = { Critical: 0, High: 1, Medium: 2, Low: 3 }
+const URGENCY_RANK: Record<string, number> = {
+  Critical: 0,
+  High: 1,
+  Medium: 2,
+  Low: 3,
+}
 
 export default function App() {
   const [data, setData] = useState<TicketsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [progressText, setProgressText] = useState('Starting triage…')
 
   const [urgency, setUrgency] = useState('All')
   const [category, setCategory] = useState('All')
@@ -23,14 +29,67 @@ export default function App() {
   const [selected, setSelected] = useState<TriagedTicket | null>(null)
 
   useEffect(() => {
-    fetchTickets()
-      .then(setData)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
+    let cancelled = false
+
+    async function runTriage() {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // 1. Already triaged? Load cached results immediately (handles reloads).
+        let result = await fetchTickets()
+        if (result) {
+          if (!cancelled) {
+            setData(result)
+            setLoading(false)
+          }
+          return
+        }
+
+        // 2. Not ready → start the batch ONCE.
+        await startTriage()
+
+        // 3. Poll progress; only fetch tickets once the batch reports done.
+        while (!cancelled) {
+          const progress = await fetchProgress()
+
+          if (progress.total > 0 && !progress.running) {
+            result = await fetchTickets()
+            if (result) {
+              if (!cancelled) {
+                setData(result)
+                setLoading(false)
+              }
+              return
+            }
+          }
+
+          setProgressText(
+            progress.total > 0
+              ? `Processing ticket ${progress.current} of ${progress.total}…`
+              : 'Starting triage…',
+          )
+
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'Something went wrong')
+          setLoading(false)
+        }
+      }
+    }
+
+    runTriage()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const filtered = useMemo(() => {
     if (!data) return []
+
     const rows = data.tickets.filter(
       (t) =>
         (urgency === 'All' || t.urgency === urgency) &&
@@ -38,16 +97,22 @@ export default function App() {
         (sentiment === 'All' || t.sentiment === sentiment) &&
         t.message.toLowerCase().includes(query.toLowerCase()),
     )
+
     if (sort === 'off') return rows
-    // copy before sorting so we never mutate the original data
+
     return [...rows].sort((a, b) => {
-      const diff = (URGENCY_RANK[a.urgency] ?? 99) - (URGENCY_RANK[b.urgency] ?? 99)
+      const diff =
+        (URGENCY_RANK[a.urgency] ?? 99) -
+        (URGENCY_RANK[b.urgency] ?? 99)
+
       return sort === 'asc' ? diff : -diff
     })
   }, [data, urgency, category, sentiment, query, sort])
 
   const toggleSort = () =>
-    setSort((s) => (s === 'off' ? 'asc' : s === 'asc' ? 'desc' : 'off'))
+    setSort((s) =>
+      s === 'off' ? 'asc' : s === 'asc' ? 'desc' : 'off',
+    )
 
   const clearFilters = () => {
     setUrgency('All')
@@ -64,29 +129,38 @@ export default function App() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white shadow-sm">
               C
             </div>
+
             <div>
               <h1 className="text-base font-semibold leading-tight md:text-lg">
-                Caregene <span className="font-normal text-slate-400">·</span> Support Triage
+                Caregene{' '}
+                <span className="font-normal text-slate-400">·</span>{' '}
+                Support Triage
               </h1>
+
               <p className="hidden text-xs text-slate-500 sm:block md:text-sm">
                 AI-assisted triage for incoming support tickets
               </p>
             </div>
           </div>
 
-          <span className="inline-flex items-center gap-2 rounded-full border bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                error ? 'bg-red-500' : data ? 'bg-emerald-500' : 'animate-pulse bg-amber-400'
-              }`}
-            />
-            {error ? 'Error' : data ? `${data.summary.total} tickets triaged` : 'Loading…'}
-          </span>
+          {(data || error) && (
+            <span className="inline-flex items-center gap-2 rounded-full border bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+              <span
+                className={`h-2 w-2 rounded-full ${error ? 'bg-red-500' : 'bg-emerald-500'}`}
+              />
+              {error ? 'Error' : `${data?.summary.total ?? 0} tickets triaged`}
+            </span>
+          )}
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
-        {loading && <p className="text-sm text-slate-500">Loading tickets…</p>}
+        {loading && (
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-600">{progressText}</p>
+          </div>
+        )}
+
         {error && (
           <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
             Failed to load tickets: {error}
@@ -96,7 +170,9 @@ export default function App() {
         {data && (
           <>
             <StatsOverview summary={data.summary} />
+
             <Charts summary={data.summary} />
+
             <Filters
               urgency={urgency}
               onUrgency={setUrgency}
@@ -108,9 +184,11 @@ export default function App() {
               onQuery={setQuery}
               onClear={clearFilters}
             />
+
             <p className="text-sm text-slate-500">
               Showing {filtered.length} of {data.tickets.length} tickets
             </p>
+
             <TicketList
               tickets={filtered}
               onSelect={setSelected}
@@ -121,7 +199,12 @@ export default function App() {
         )}
       </main>
 
-      {selected && <TicketDetail ticket={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <TicketDetail
+          ticket={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   )
 }

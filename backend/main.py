@@ -1,10 +1,12 @@
-"""FastAPI entrypoint. Run locally with:  uvicorn main:app --reload"""
-from fastapi import FastAPI, HTTPException
+"""FastAPI entrypoint. Run locally with:  python main.py"""
+
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 
 import analytics
 import config
 import triage
+
 
 app = FastAPI(title="Caregene Triage API")
 
@@ -20,21 +22,42 @@ app.add_middleware(
 def health():
     return {"status": "ok"}
 
+
 @app.get("/api/progress")
 def get_progress():
+    """Return the current AI triage progress (for the loading/progress bar)."""
     return triage.progress
-@app.get("/api/tickets")
-def get_tickets(force: bool = False):
-    """Return all triaged tickets plus batch-level summary.
 
-    Pass ?force=true to re-run the AI instead of using the cache.
-    """
-    try:
-        tickets = triage.triage_batch(force=force)
-    except Exception as exc:  # keep the dashboard honest about failures
-        raise HTTPException(status_code=502, detail=f"Triage failed: {exc}") from exc
+
+@app.post("/api/triage")
+def start_triage(background_tasks: BackgroundTasks):
+    """Start the AI triage batch once, in the background."""
+
+    # Don't start a second batch if one is already running.
+    if triage.progress["running"]:
+        return {"status": "already_running", "message": "Triage is already running."}
+
+    background_tasks.add_task(triage.triage_batch)
+    return {"status": "started", "message": "Triage started."}
+
+
+@app.get("/api/tickets")
+def get_tickets():
+    """Return already-completed triage results (does NOT start a run)."""
+
+    cached = triage._read_cache()
+    if cached is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Triage not ready yet. POST /api/triage first, then poll /api/progress.",
+        )
 
     return {
-        "tickets": [t.model_dump() for t in tickets],
-        "summary": analytics.summarise(tickets),
+        "tickets": [t.model_dump() for t in cached],
+        "summary": analytics.summarise(cached),
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # no reload
