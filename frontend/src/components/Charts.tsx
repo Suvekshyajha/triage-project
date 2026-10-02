@@ -11,30 +11,22 @@ import {
 import type { Summary } from '../types'
 
 const URGENCY_COLORS: Record<string, string> = {
-  Critical: '#ef4444',
+  Critical: '#b91c1c',
   High: '#f97316',
   Medium: '#eab308',
-  Low: '#22c55e',
+  Low: '#94a3b8',
 }
 
 const SENTIMENT_COLORS: Record<string, string> = {
-  Angry: '#ef4444',
+  Angry: '#dc2626',
   Frustrated: '#f97316',
-  Neutral: '#94a3b8', 
-  Happy: '#22c55e',
-}
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Technical: '#ec4899',
-  Billing: '#0ea5e9',
-  Account: '#8b5cf6',
-  Feedback: '#14b8a6',
-  Other: '#94a3b8',
+  Neutral: '#94a3b8',
+  Happy: '#10b981',
 }
 
 const URGENCY_ORDER = ['Critical', 'High', 'Medium', 'Low']
 const SENTIMENT_ORDER = ['Angry', 'Frustrated', 'Neutral', 'Happy']
-const DEFAULT_COLOR = '#6366f1'
+const DEFAULT_COLOR = '#6366f1' // indigo, used for the category chart
 
 function toData(record: Record<string, number>, order?: string[]) {
   const entries = Object.entries(record).map(([name, value]) => ({ name, value }))
@@ -56,7 +48,7 @@ function ChartCard({
   colors?: Record<string, string>
 }) {
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+    <div className="rounded-xl border bg-white p-4 shadow-sm">
       <h3 className="mb-2 text-sm font-medium text-slate-700">{title}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 16 }}>
@@ -67,7 +59,7 @@ function ChartCard({
             {data.map((entry) => (
               <Cell key={entry.name} fill={colors?.[entry.name] ?? DEFAULT_COLOR} />
             ))}
-            <LabelList dataKey="value" position="top" fontSize={12} />
+            <LabelList dataKey="value" position="top" fontSize={12} fill="#334155" />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -78,11 +70,7 @@ function ChartCard({
 export default function Charts({ summary }: { summary: Summary }) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      <ChartCard
-        title="By category"
-        data={toData(summary.by_category)}
-        colors={CATEGORY_COLORS}
-      />
+      <ChartCard title="By category" data={toData(summary.by_category)} />
       <ChartCard
         title="By urgency"
         data={toData(summary.by_urgency, URGENCY_ORDER)}

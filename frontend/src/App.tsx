@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchTickets, startTriage, fetchProgress } from './api'
-import type { TicketsResponse, TriagedTicket } from './types'
+import type { TicketsResponse } from './types'
 import StatsOverview from './components/StatsOverview'
 import Charts from './components/Charts'
 import Filters from './components/Filters'
@@ -25,8 +25,10 @@ export default function App() {
   const [category, setCategory] = useState('All')
   const [sentiment, setSentiment] = useState('All')
   const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<SortDir>('off')
-  const [selected, setSelected] = useState<TriagedTicket | null>(null)
+  const [sort, setSort] = useState<SortDir>('asc') // Critical first by default
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+
+  const detailRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -101,18 +103,16 @@ export default function App() {
     if (sort === 'off') return rows
 
     return [...rows].sort((a, b) => {
-      const diff =
-        (URGENCY_RANK[a.urgency] ?? 99) -
-        (URGENCY_RANK[b.urgency] ?? 99)
-
+      const diff = (URGENCY_RANK[a.urgency] ?? 99) - (URGENCY_RANK[b.urgency] ?? 99)
       return sort === 'asc' ? diff : -diff
     })
   }, [data, urgency, category, sentiment, query, sort])
 
+  // The selected ticket is derived from what is currently visible.
+  const selected = filtered.find((t) => t.id === selectedId) ?? filtered[0] ?? null
+
   const toggleSort = () =>
-    setSort((s) =>
-      s === 'off' ? 'asc' : s === 'asc' ? 'desc' : 'off',
-    )
+    setSort((s) => (s === 'off' ? 'asc' : s === 'asc' ? 'desc' : 'off'))
 
   const clearFilters = () => {
     setUrgency('All')
@@ -121,10 +121,18 @@ export default function App() {
     setQuery('')
   }
 
+  function handleSelect(id: number) {
+    setSelectedId(id)
+    // On small screens the panel sits below the table, so bring it into view.
+    if (window.innerWidth < 1024) {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white shadow-sm">
               C
@@ -132,9 +140,7 @@ export default function App() {
 
             <div>
               <h1 className="text-base font-semibold leading-tight md:text-lg">
-                Caregene{' '}
-                <span className="font-normal text-slate-400">·</span>{' '}
-                Support Triage
+                Caregene <span className="font-normal text-slate-400">·</span> Support Triage
               </h1>
 
               <p className="hidden text-xs text-slate-500 sm:block md:text-sm">
@@ -154,7 +160,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
+      <main className="mx-auto max-w-7xl space-y-5 p-4 md:p-6">
         {loading && (
           <div className="rounded-lg bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-600">{progressText}</p>
@@ -185,26 +191,26 @@ export default function App() {
               onClear={clearFilters}
             />
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-600">
               Showing {filtered.length} of {data.tickets.length} tickets
             </p>
 
-            <TicketList
-              tickets={filtered}
-              onSelect={setSelected}
-              sort={sort}
-              onToggleSort={toggleSort}
-            />
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+              <TicketList
+                tickets={filtered}
+                selectedId={selected?.id ?? null}
+                onSelect={handleSelect}
+                sort={sort}
+                onToggleSort={toggleSort}
+              />
+
+              <div ref={detailRef} className="scroll-mt-20 lg:sticky lg:top-20">
+                <TicketDetail key={selected?.id ?? 'none'} ticket={selected} />
+              </div>
+            </div>
           </>
         )}
       </main>
-
-      {selected && (
-        <TicketDetail
-          ticket={selected}
-          onClose={() => setSelected(null)}
-        />
-      )}
     </div>
   )
 }
