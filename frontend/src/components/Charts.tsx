@@ -15,7 +15,7 @@ const URGENCY_COLORS: Record<string, string> = {
   Critical: '#b91c1c',
   High: '#f97316',
   Medium: '#eab308',
-  Low: '#94a3b8',
+  Low: '#10b981',
 }
 
 const SENTIMENT_COLORS: Record<string, string> = {
