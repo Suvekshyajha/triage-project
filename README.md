@@ -7,21 +7,13 @@ customer sounds, and a draft reply the agent can send.
 The interesting part of this project was not the dashboard. It was getting the AI to label
 things the way a real support lead would. That took seven versions of the prompt.
 
-- **Live app:** _TODO_ | **Repo:** _TODO_ | **Video walkthrough:** _TODO_
-
-**[ INSERT IMAGE HERE - Dashboard: stat cards, charts and the ticket table ]**
-
-<br>
-
-**[ INSERT IMAGE HERE - Ticket detail panel with the AI suggested reply ]**
-
----
+**Deployment link to see the implementation:** https://triage-project-frontend.vercel.app
 
 ## Project structure
 
 ```
 caregene-triage/
-├── prompt-versions/              All 7 prompt versions + their output + my notes
+├── prompt-versions/              All 7 prompt versions + their triage cache + my notes
 ├── backend/                      Python + FastAPI
 │   ├── main.py                   API routes
 │   ├── prompts.py                The prompt (single source of truth)
@@ -38,6 +30,10 @@ caregene-triage/
         ├── types.ts              TS mirror of the backend schema
         └── components/           Stats, Charts, Filters, TicketList, TicketDetail
 ```
+
+The `prompt-versions/` folder at the root holds every prompt I actually ran, the triage cache
+each one produced, and the notes I wrote while reviewing it. Everything I say further down can
+be checked against those files.
 
 ---
 
@@ -84,7 +80,7 @@ Set `VITE_API_URL=backend url`.
 | Choice | Why I picked it |
 | --- | --- |
 | **FastAPI** | One small API that calls a model and returns JSON. Nothing heavier was needed. |
-| **Pydantic enums** | This is the important one. The valid labels live in code, not in the prompt. If the model returns anything else, validation fails and the call retries. Schema compliance was 20/20 in all seven runs because of this. |
+| **Pydantic enums** | This is the important one. The valid labels live in code, not in the prompt. If the model returns anything else, validation fails and the call retries. Across all seven versions, every ticket came back with valid values because of this. |
 | **Groq + JSON mode** | Fast and free for 20 tickets. JSON mode plus the Pydantic schema in the prompt means I get real JSON back instead of free text I would have to clean up. Model is set by `AI_MODEL`, so it can be swapped without touching code. Temperature 0.2. |
 | **React + Vite + TypeScript** | Vite starts instantly, and `types.ts` mirrors the backend schema, so a label change breaks the build instead of quietly breaking the UI. |
 | **Tailwind + Recharts** | Quickest route to a clean dashboard with charts. |
@@ -188,50 +184,84 @@ For suggested_reply, write a short draft of 2-5 sentences in easy-to-understand 
 
 </details>
 
-**All seven prompt versions are in the `prompt-versions/` folder in the repo root.** Each one
-has the full prompt text, the exact 20-ticket output it produced, and the notes I wrote while
-scoring it.
-
 ---
 
 ## How the prompt evolved
 
-After every version I ran the same 20 tickets, compared all 60 labels (20 tickets x 3 fields)
-against a reference set I wrote by hand, then read all 20 replies and counted which rule each
-one broke. Whatever got worse became the edit list for the next version.
+**All seven versions are in the `prompt-versions/` folder in the repo root,** each with its
+full prompt text, the exact 20-ticket output it produced, and the notes I wrote while reviewing
+it. Everything below can be checked against those files.
 
+After every version I ran the same 20 tickets, compared each label against a reference set I
+wrote by hand, then read all 20 replies and noted which rule each one broke. Whatever got worse
+became the edit list for the next version. Every change from v4 onward was aimed at a specific
+ticket that had failed, not at a general feeling that the prompt could be better.
 
-**v1 had no rules.** It got the dangerous tickets right by instinct, but the replies made
-things up: a menu path called "Caregivers > Add Caregiver", a yearly discount, Nepali language
-support, a family plan. One reply said "I've locked your account" when the reply does nothing
-at all. And a slow dashboard was ranked higher than medication reminders arriving late, which
-is backwards for a health app.
+**v1 had no rules.** Just the role and the four fields. It got the dangerous tickets right by
+instinct, which was reassuring, but the replies invented things freely: a menu path called
+"Caregivers > Add Caregiver", a yearly discount, Nepali language support, a family plan. One
+reply said "I've locked your account" when the reply does nothing at all. Another promised a
+refund before anyone had looked at the charge. Urgency was inconsistent too: a slow dashboard
+was ranked High while medication reminders arriving late sat at Medium, which is backwards for
+a health app.
 
-**v2 fixed urgency** by writing the four levels out. Late reminders still sat at Medium though,
-because no rule mentioned reminder reliability.
+**v2 added urgency rules** for all four levels, plus one line of context about what the app
+actually does. The slow dashboard dropped to Medium and how-to questions became consistent.
+Late reminders still sat at Medium though, because nothing in the rules mentioned reminder
+reliability. I also wrote the High rule badly: "any technical glitch that is not critical or
+concerns the user's health" reads as "everything non critical is High", which contradicts the
+Medium rule. That one sentence caused problems for the next two versions.
 
-**v3 is where I learned the most useful lesson.** I wrote the sentiment rules as lists of
-trigger words - "unacceptable", "fraud", "frustrated", "fed up". Sentiment prediction accuracy immediately dropped
-. The model started matching words instead of reading tone, so "Fix this immediately"
-after a missed insulin dose came back as Frustrated, because none of my words appeared. Listing
-example words tells the model to look for words.
+**v3 added category rules and sentiment rules, and this is where I learned the most.** The
+category rules worked immediately. Login moved from Technical to Account, which is where it
+belongs, and categories stayed correct for every version after this one. The sentiment rules
+were the opposite. I wrote them as lists of trigger words, things like "unacceptable", "fraud",
+"frustrated", "fed up", and accuracy dropped sharply. The model stopped reading tone and started
+matching words. "Fix this immediately" after a missed insulin dose came back as Frustrated,
+because none of my words appeared in it. So did "I need this account locked down immediately".
+Complaints like "it worked fine last week" and "every single time" came back as Neutral for the
+same reason. Listing example words tells the model to go looking for words.
 
-**v4 fixed that with one sentence:** "the words below are hints, not requirements - judge how
-upset the customer sounds, not how serious the issue is". Sentiment recovered, and the first
-batch of reply rules killed all five made-up replies at once. Biggest single jump in reply
-quality in the project.
+**v4 fixed sentiment with one sentence:** "the words below are hints, not requirements, judge
+how upset the customer sounds, not how serious the issue is". I added tie-breakers for Neutral
+versus Frustrated and Frustrated versus Angry, and wrote the first seven numbered reply rules.
+Sentiment recovered and reply quality jumped more than in any other version. All five
+hallucinating replies became safe, nothing claimed to be already done, technical replies started
+asking for device and app version, and the health tickets got a real interim safety step. Two
+things still broke. Urgency slipped back on the pill scanner and the late reminders, because I
+still had not fixed the High rule. And the ALL CAPS ticket stayed Frustrated, because my
+Frustrated definition included "worried or stressed" and my tie-breaker ended with "otherwise
+choose Frustrated", so Frustrated had quietly become the default for anything serious.
 
-**v5 finally rewrote the High rule properly**, naming the health features out loud, and triage
-hit 9.7. But reply quality went *down*, which surprised me. Three safety lines just disappeared,
-and my ban on "we will restore" became "work to restore" in six replies.
+**v5 finally rewrote the High rule properly,** naming the health features out loud: reminders,
+scanning, tracking, video consultation. I added "check for Angry signals first, then Frustrated,
+then Neutral", and the line "a message that reports a problem is never Neutral, even if it ends
+with a question". Urgency settled down and stayed settled. But reply quality went down, which
+surprised me. Three safety lines that v4 had produced simply disappeared, even though rule 5
+described all three. The security reply still used the word "lock" after I had banned it and
+written out the exact replacement sentence. And the ban on "we will restore" came back as "work
+to restore" in six replies. I also caught a mistake of my own: several of the tone examples I
+had added were close paraphrases of the actual test tickets, so part of the gain might have been
+the model copying my examples rather than following the rules.
 
-**v6 taught me that precedence beats description.** One line - "if ANY Angry signal is present,
-choose Angry even if the customer also sounds worried" - fixed the last sentiment miss on the
-first try, after two versions of longer, richer definitions had failed. Sentiment prediction became very precise
+**v6 taught me that precedence beats description.** One line, "if ANY Angry signal is present,
+choose Angry even if the customer also sounds worried, scared or stressed", fixed the last
+sentiment miss on the first try, after two versions of longer and richer definitions had failed.
+I also replaced every tone example with one on an unrelated topic, which doubled as a test: the
+earlier sentiment fixes held anyway, so they had come from the rules, not from the examples.
+Making the safety lines mandatory brought all three missing lines back, and banning "work on"
+and "work to" cut the promise wording down to two replies. The mandatory safety lines had a side
+effect I had not thought about: two replies started adding health advice to tickets that did not
+ask for any, and one of them edged towards medical advice. One reply also invented a screen name.
 
-**v7 I deliberately left sentiment and category untouched**, because both were already perfect
-and editing them could only lose points. Every edit targeted one named ticket that had failed in
-v6. 
+**v7 I deliberately left the sentiment and category blocks completely untouched,** because both
+were already behaving and editing them could only make things worse. Everything else targeted a
+named failure from v6. Critical now says outright that a failure which caused a missed dose of
+critical medication is Critical, High says "where no dose has been missed", and a tie-breaker
+says Critical wins when both fit. The promise rule changed from a ban list to an allow list, the
+list of things the reply may ask for became closed, naming any screen or button was banned
+outright, and the safety lines were narrowed to "include the matching one and nothing else".
+That was the version that stopped the triage labels moving around.
 
 ---
 
@@ -260,25 +290,32 @@ review or look into the issue and will get back to you.* That dropped the proble
 replies to two.
 
 The real takeaway is that there is a difference between asking a model to **judge** something
-and asking it to **obey exact wording**. The judgement rules worked beautifully - urgency,
-category and sentiment all reached 20/20 on prompt text alone. The wording rules hit a ceiling:
-even in v7, 15 of 20 replies still write "I" instead of "we", even though rule 7 says it
-plainly. Wording belongs in code - generate the reply, scan it for banned patterns, retry once
-with a specific correction. That's the first thing I'd add next.
+and asking it to **obey exact wording**. The judgement rules worked beautifully. Urgency,
+category and sentiment all came out right on every ticket, using prompt text alone. The wording
+rules hit a ceiling: even in v7, 15 of the 20 replies still write "I" instead of "we", even
+though rule 7 says it plainly. Wording belongs in code. Generate the reply, scan it for banned
+patterns, retry once with a specific correction. That's the first thing I'd add next.
 
 ---
 
 ## Limitations
 
-I want to be straight about what 60/60 does and doesn't prove.
+A few things I want to be upfront about.
 
-- **It's one run per version**, at temperature 0.2 rather than 0. A single label flipping
-  between versions could be randomness, not my edit.
-- **The reference labels are mine.** There was no supplied answer key, so a second reviewer
-  might disagree on two or three borderline Angry vs Frustrated calls.
-- **The 20 tickets are used up.** Every rule from v4 onward was written while staring at these
-  exact tickets. 60/60 means "fits these 20", not "will generalise". The honest next step is a
-  holdout set of fresh tickets, scored once.
-- **Replies are still the weaker half.** 8.6 vs 9.9. They're safe - nothing invented, nothing
-  promised, right safety lines - but the tone rules aren't followed closely, and that needs a
-  code-side check rather than more prompt text.
+**I only ran each version once,** and at temperature 0.2 rather than 0. So when a label changed
+between two versions, I cannot always be sure my edit caused it rather than the model simply
+answering differently that time. Running each version three times at temperature 0 would settle
+that.
+
+**The reference labels are my own judgement.** There was no answer key with the task, so I wrote
+down what I thought each ticket should be and compared against that. Someone else could
+reasonably disagree on the borderline Angry versus Frustrated tickets.
+
+**I tuned on the same tickets I tested on.** From v4 onward, every rule I wrote came from
+staring at these exact 20 messages. So the prompt fits this set well, but I have no proof it
+would hold up on tickets it has never seen. The honest next step is a fresh batch of tickets,
+written separately and scored once.
+
+**The replies are the weaker half of the output.** They are safe now, nothing invented and
+nothing promised, but tone is the part the model follows least closely. Fixing that properly
+needs a check in code rather than more prompt text.
