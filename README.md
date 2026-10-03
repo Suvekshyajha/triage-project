@@ -300,6 +300,14 @@ patterns, retry once with a specific correction. That's the first thing I'd add 
 
 
 staring at these exact 20 messages. So the prompt fits this set well, but I have no proof it
+
+## What I would improve in the future
+
+1. **A reply checker in code.** This is the biggest gap. The judgement rules work, but the wording rules hit a ceiling: 15 of 20 replies still say "I" instead of "we", and a few still imply a feature exists. I would add a validator after every reply that scans for banned patterns ("resolve", "work to", "I'm", "I'll", "the options for…") and retries once with a specific correction. For tickets about missed alerts or reminders, it would also add the matching safety line itself, so it can never be skipped.
+
+2. **Triage any new ticket, with results that last.** Right now the dashboard only shows 20 fixed tickets and keeps them in a JSON file. I would add an input box and a single-ticket endpoint so a support agent can paste a new message and get a triage straight away. I would also move storage to a small database, because Render's free disk is wiped on every redeploy.
+
+3. **A human review loop, scored on tickets the prompt has never seen.** Edits to a reply currently disappear when the page reloads. I would save them on the server, add a "reviewed" status, and log which replies agents send unchanged and which they rewrite. That gives real feedback for the next prompt version. I would also score the prompt once on a fresh batch of tickets, since I tuned it on these 20 and can't yet say how it performs on new ones.
 would hold up on tickets it has never seen. The honest next step is a fresh batch of tickets,
 written separately and scored once.
 
