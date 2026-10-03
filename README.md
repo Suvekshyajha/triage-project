@@ -5,7 +5,7 @@ I built a small dashboard that takes 20 customer support messages, sends each on
 The interesting part of this project was not the dashboard. It was getting the AI to label things the way a real support lead would. That took seven versions of the prompt.
 
 Deployment link to see the implementation: https://triage-project-frontend.vercel.app
-
+> **Note:** The frontend is hosted on Vercel and the backend on Render (free tier). Render puts the backend to sleep when nobody has used it for a while, so the first time you open the live link it may take **30-45 seconds** to load while the backend starts up again. After that it responds normally. The triage results are already saved, so nothing is re-processed by the AI on that first visit.
 ## Project structure
 
 ```text
