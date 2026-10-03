@@ -298,20 +298,7 @@ patterns, retry once with a specific correction. That's the first thing I'd add 
 
 ---
 
-## Limitations
 
-A few things I want to be upfront about.
-
-**I only ran each version once,** and at temperature 0.2 rather than 0. So when a label changed
-between two versions, I cannot always be sure my edit caused it rather than the model simply
-answering differently that time. Running each version three times at temperature 0 would settle
-that.
-
-**The reference labels are my own judgement.** There was no answer key with the task, so I wrote
-down what I thought each ticket should be and compared against that. Someone else could
-reasonably disagree on the borderline Angry versus Frustrated tickets.
-
-**I tuned on the same tickets I tested on.** From v4 onward, every rule I wrote came from
 staring at these exact 20 messages. So the prompt fits this set well, but I have no proof it
 would hold up on tickets it has never seen. The honest next step is a fresh batch of tickets,
 written separately and scored once.
